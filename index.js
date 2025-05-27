@@ -34,7 +34,10 @@ const coinMap = {
   zk: 'zksync',
   cyber: 'cyberconnect',
   arb: 'arbitrum',
-  pi: 'pi-network'
+  pi: 'pi-network',
+  l3: 'layer3',
+  dogs: 'dogs',
+  sats: 'sats-ordinals',
 };
 
 client.once('ready', () => {
