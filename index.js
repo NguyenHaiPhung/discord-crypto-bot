@@ -37,7 +37,7 @@ const coinMap = {
   pi: 'pi-network',
   l3: 'layer3',
   dogs: 'dogs',
-  sats: 'sats-ordinals',
+  sats: 'sats-ordinals'
 };
 
 client.once('ready', () => {
