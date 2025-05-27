@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 
-const TOKEN = process.env.TOKEN; // Thay bằng token thật
+const TOKEN = process.env.DISCORD_BOT_TOKEN; // Thay bằng token thật
 const CHANNEL_ID = '1376571924343160963'; // ID kênh bạn muốn bot gửi giá mỗi giờ
 
 const client = new Client({
@@ -112,4 +112,4 @@ async function sendHourlyPrices() {
   }
 }
 
-client.login(TOKEN);
+client.login(process.env.DISCORD_BOT_TOKEN);
