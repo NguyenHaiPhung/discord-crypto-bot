@@ -51,30 +51,51 @@ client.on('messageCreate', async message => {
 
   // Lệnh !gia <token>
   if (command === '!gia') {
-    const input = args[1] || 'btc';
-    const coin = coinMap[input.toLowerCase()] || input.toLowerCase();
+  const input = args[1] || 'btc';
+  const coin = coinMap[input.toLowerCase()] || input.toLowerCase();
 
-    try {
-      const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd&include_24hr_change=true`);
-      const price = res.data[coin].usd;
-      const change = res.data[coin].usd_24h_change.toFixed(2);
-      message.reply(`💰 Giá **${coin.toUpperCase()}**: **$${price}** (24h: ${change}%)`);
-    } catch (err) {
-      message.reply(`❌ Không tìm thấy token "${input}"`);
-    }
+  try {
+    const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
+  headers: {
+    'x-cg-api-key': process.env.COINGECKO_API_KEY,
+    'User-Agent': 'DiscordBot/1.0'
+  },
+  params: {
+    ids: coin,
+    vs_currencies: 'usd',
+    include_24hr_change: 'true'
   }
+});
+
+    const data = res.data[coin];
+    if (!data) {
+      return message.reply(`❌ Không tìm thấy token "${input}"`);
+    }
+
+    const price = data.usd;
+    const change = data.usd_24h_change.toFixed(2);
+    message.reply(`💰 Giá **${coin.toUpperCase()}**: **$${price}** (24h: ${change}%)`);
+  } catch (err) {
+    console.error('Lỗi khi lấy giá token:', err.message);
+    message.reply(`❌ Không thể lấy giá "${input}" lúc này.`);
+  }
+}
 
   // Lệnh !top
   if (command === '!top') {
     try {
       const res = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
-        params: {
-          vs_currency: 'usd',
-          order: 'market_cap_desc',
-          per_page: 10,
-          page: 1
-        }
-      });
+  headers: {
+    'x-cg-api-key': process.env.COINGECKO_API_KEY,
+    'User-Agent': 'DiscordBot/1.0'
+  },
+  params: {
+    vs_currency: 'usd',
+    order: 'market_cap_desc',
+    per_page: 10,
+    page: 1
+  }
+});
 
       const topCoins = res.data.map(coin =>
         `#${coin.market_cap_rank} **${coin.name} (${coin.symbol.toUpperCase()})**: $${coin.current_price} (24h: ${coin.price_change_percentage_24h.toFixed(2)}%)`
@@ -89,16 +110,20 @@ client.on('messageCreate', async message => {
 
 // Tự động gửi giá mỗi 1 giờ
 async function sendHourlyPrices() {
-  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'g7', 'carv'];
+  const ids = ['bitcoin', 'ethereum'];
   const channel = await client.channels.fetch(CHANNEL_ID);
   try {
     const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
-      params: {
-        ids: ids.join(','),
-        vs_currencies: 'usd',
-        include_24hr_change: 'true'
-      }
-    });
+  headers: {
+    'x-cg-api-key': process.env.COINGECKO_API_KEY,
+    'User-Agent': 'DiscordBot/1.0'
+  },
+  params: {
+    ids: ids.join(','),
+    vs_currencies: 'usd',
+    include_24hr_change: 'true'
+  }
+});
 
     const result = ids.map(id => {
       const info = res.data[id];
