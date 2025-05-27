@@ -3,7 +3,7 @@ const axios = require('axios');
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CHANNEL_ID = '1376571924343160963';
-const API_KEY = process.env.COINGECKO_API_KEY;
+const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 
 const client = new Client({
   intents: [
@@ -24,7 +24,7 @@ const coinMap = {
   bera: 'berachain',
   scr: 'scroll',
   imx: 'immutable-x',
-  sui: 'sui',
+  sui: 'sui', 
   strk: 'starknet',
   link: 'chainlink',
   near: 'near',
@@ -54,9 +54,9 @@ client.on('messageCreate', async message => {
     const coin = coinMap[input.toLowerCase()] || input.toLowerCase();
 
     try {
-      const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
+      const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
         headers: {
-          'x-cg-api-key': API_KEY,
+          'x-cg-api-key': COINGECKO_API_KEY,
           'User-Agent': 'DiscordBot/1.0'
         },
         params: {
@@ -71,7 +71,7 @@ client.on('messageCreate', async message => {
       message.reply(`💰 Giá **${coin.toUpperCase()}**: **$${price}** (24h: ${change}%)`);
     } catch (err) {
       console.error('Lỗi khi lấy giá token:', err.message);
-      message.reply(`❌ Không tìm thấy token "${input}"`);
+      message.reply(`❌ Không thể lấy giá "${input}" lúc này.`);
     }
   }
 
@@ -79,7 +79,7 @@ client.on('messageCreate', async message => {
     try {
       const res = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
         headers: {
-          'x-cg-api-key': API_KEY,
+          'x-cg-api-key': COINGECKO_API_KEY,
           'User-Agent': 'DiscordBot/1.0'
         },
         params: {
@@ -103,13 +103,12 @@ client.on('messageCreate', async message => {
 });
 
 async function sendHourlyPrices() {
-  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'game7', 'carv'];
+  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'g7', 'carv'];
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
-
-    const res = await axios.get(`https://api.coingecko.com/api/v3/simple/price`, {
+    const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
       headers: {
-        'x-cg-api-key': API_KEY,
+        'x-cg-api-key': COINGECKO_API_KEY,
         'User-Agent': 'DiscordBot/1.0'
       },
       params: {
