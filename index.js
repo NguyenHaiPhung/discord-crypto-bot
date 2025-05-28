@@ -42,7 +42,7 @@ const coinMap = {
 client.once('ready', () => {
   console.log(`✅ Bot đã online với tên: ${client.user.tag}`);
   sendHourlyPrices();
-  setInterval(sendHourlyPrices, 60 * 60 * 1000);
+  setInterval(sendHourlyPrices, 60 * 60 * 1000); // mỗi giờ
 });
 
 client.on('messageCreate', async message => {
@@ -57,6 +57,9 @@ client.on('messageCreate', async message => {
 
     try {
       const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+        headers: {
+          'User-Agent': 'DiscordBot/1.0'
+        },
         params: {
           ids: coin,
           vs_currencies: 'usd',
@@ -64,18 +67,25 @@ client.on('messageCreate', async message => {
         }
       });
 
+      if (!res.data[coin]) {
+        return message.reply(`❌ Không thể lấy giá "${input}" lúc này. Đảm bảo bạn nhập đúng ký hiệu.`);
+      }
+
       const price = res.data[coin].usd;
       const change = res.data[coin].usd_24h_change.toFixed(2);
       message.reply(`💰 Giá **${coin.toUpperCase()}**: **$${price}** (24h: ${change}%)`);
     } catch (err) {
       console.error('Lỗi khi lấy giá token:', err.message);
-      message.reply(`❌ Không thể lấy giá "${input}" lúc này. Đảm bảo bạn nhập đúng ký hiệu token.`);
+      message.reply(`❌ Không thể lấy giá "${input}" lúc này.`);
     }
   }
 
   if (command === '!top') {
     try {
       const res = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
+        headers: {
+          'User-Agent': 'DiscordBot/1.0'
+        },
         params: {
           vs_currency: 'usd',
           order: 'market_cap_desc',
@@ -97,10 +107,13 @@ client.on('messageCreate', async message => {
 });
 
 async function sendHourlyPrices() {
-  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'g7', 'carv'];
+  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'game7', 'carv'];
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
     const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+      headers: {
+        'User-Agent': 'DiscordBot/1.0'
+      },
       params: {
         ids: ids.join(','),
         vs_currencies: 'usd',
