@@ -24,7 +24,7 @@ const coinMap = {
   bera: 'berachain',
   scr: 'scroll',
   imx: 'immutable-x',
-  sui: 'sui', 
+  sui: 'sui',
   strk: 'starknet',
   link: 'chainlink',
   near: 'near',
@@ -54,7 +54,11 @@ client.on('messageCreate', async message => {
 
   if (command === '!gia') {
     const input = args[1] || 'btc';
-    const coin = coinMap[input.toLowerCase()] || input.toLowerCase();
+    const coinId = await getCoinIdFromSymbol(input);
+
+    if (!coinId) {
+      return message.reply(`❌ Không tìm thấy token có ký hiệu "${input}".`);
+    }
 
     try {
       const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
@@ -63,18 +67,21 @@ client.on('messageCreate', async message => {
           'User-Agent': 'DiscordBot/1.0'
         },
         params: {
-          ids: coin,
+          ids: coinId,
           vs_currencies: 'usd',
           include_24hr_change: 'true'
         }
       });
 
-      const price = res.data[coin].usd;
-      const change = res.data[coin].usd_24h_change.toFixed(2);
-      message.reply(`💰 Giá **${coin.toUpperCase()}**: **$${price}** (24h: ${change}%)`);
+      const data = res.data[coinId];
+      if (!data) throw new Error('Không có dữ liệu trả về từ API');
+
+      const price = data.usd;
+      const change = data.usd_24h_change?.toFixed(2) ?? '0.00';
+      message.reply(`💰 Giá **${coinId.toUpperCase()}**: **$${price}** (24h: ${change}%)`);
     } catch (err) {
       console.error('Lỗi khi lấy giá token:', err.message);
-      message.reply(`❌ Không thể lấy giá "${input}" lúc này.`);
+      message.reply(`❌ Không thể lấy giá "${input}" lúc này. Đảm bảo bạn nhập đúng ký hiệu token.`);
     }
   }
 
@@ -94,7 +101,7 @@ client.on('messageCreate', async message => {
       });
 
       const topCoins = res.data.map(coin =>
-        `#${coin.market_cap_rank} **${coin.name} (${coin.symbol.toUpperCase()})**: $${coin.current_price} (24h: ${coin.price_change_percentage_24h.toFixed(2)}%)`
+        `#${coin.market_cap_rank} **${coin.name} (${coin.symbol.toUpperCase()})**: $${coin.current_price} (24h: ${coin.price_change_percentage_24h?.toFixed(2) ?? 0}%)`
       ).join('\n');
 
       message.reply(`🌐 **Top 10 coin theo Market Cap:**\n${topCoins}`);
@@ -105,8 +112,29 @@ client.on('messageCreate', async message => {
   }
 });
 
+async function getCoinIdFromSymbol(symbol) {
+  const lower = symbol.toLowerCase();
+  if (coinMap[lower]) return coinMap[lower];
+
+  try {
+    const res = await axios.get('https://api.coingecko.com/api/v3/coins/list', {
+      headers: {
+        'x-cg-api-key': COINGECKO_API_KEY,
+        'User-Agent': 'DiscordBot/1.0'
+      }
+    });
+
+    const coins = res.data;
+    const match = coins.find(c => c.symbol.toLowerCase() === lower);
+    return match?.id || null;
+  } catch (err) {
+    console.error('Lỗi khi tra cứu symbol:', err.message);
+    return null;
+  }
+}
+
 async function sendHourlyPrices() {
-  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'g7', 'carv'];
+  const ids = ['bitcoin', 'ethereum', 'binancecoin', 'game7', 'carv'];
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
     const res = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
@@ -124,7 +152,7 @@ async function sendHourlyPrices() {
     const result = ids.map(id => {
       const info = res.data[id];
       if (!info) return `❌ Không có dữ liệu cho ${id}`;
-      return `💰 ${id.toUpperCase()}: $${info.usd} (24h: ${info.usd_24h_change.toFixed(2)}%)`;
+      return `💰 ${id.toUpperCase()}: $${info.usd} (24h: ${info.usd_24h_change?.toFixed(2) ?? 0}%)`;
     }).join('\n');
 
     channel.send(`📊 **Cập nhật giá mỗi giờ:**\n${result}`);
